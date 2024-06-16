@@ -188,11 +188,11 @@ pub const AnyProtocol = packed struct {
 };
 
 pub const AutoReleasePool = opaque {
-    pub inline fn init() *const AutoReleasePool {
+    pub inline fn push() *const AutoReleasePool {
         return @ptrCast(objc_autoreleasePoolPush().?);
     }
 
-    pub inline fn deinit(self: *const AutoReleasePool) void {
+    pub inline fn pop(self: *const AutoReleasePool) void {
         objc_autoreleasePoolPop(@constCast(self));
     }
 };

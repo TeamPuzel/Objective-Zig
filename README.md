@@ -8,6 +8,16 @@ and could be implemented for other runtimes, like GObject.
 
 It allows implementing native UI for Zig applications without having to use any other languages.
 
+
+### Examples
+
+You can run examples with:
+
+```sh
+zig build run                  # Default example (window)
+zig build run -Dexample=window # Any example from the examples directory
+```
+
 Everything is abstracted to standard Zig syntax with the usual Smalltalk style message chaining:
 
 ```zig
@@ -31,8 +41,8 @@ An example Cocoa window:
 pub fn main() void {
     registerClasses();
     
-    const autoreleasepool = AutoReleasePool.init();
-    defer autoreleasepool.deinit();
+    const autoreleasepool = AutoReleasePool.push();
+    defer autoreleasepool.pop();
     
     const app = NSApplication.sharedApplication();
     _ = app.activationPolicy(.regular);

@@ -34,16 +34,32 @@ pub fn NSObjectDerive(comptime Self: type) type {
             const name = comptime name_iter.next() orelse @typeName(Self);
             comptime var cstr: [name.len:0]u8 = undefined;
             comptime std.mem.copyForwards(u8, &cstr, name);
-            const copy = cstr;
-            return AnyClass.named(copy[0..]);
+            const cpy = cstr;
+            return AnyClass.named(cpy[0..]);
+        }
+        
+        pub fn new() Self {
+            return Self.alloc().init();
         }
         
         pub fn alloc() Self {
             return class().msg("alloc", .{}, Self);
         }
         
+        pub fn dealloc(self: Self) void {
+            self.msg("dealloc", .{}, void);
+        }
+        
         pub fn init(self: Self) Self {
             return self.any.msg("init", .{}, Self);
+        }
+        
+        pub fn copy(self: Self) Self {
+            return self.any.msg("copy", .{}, Self);
+        }
+        
+        pub fn mutableCopy(self: Self) Self {
+            return self.any.msg("copy", .{}, Self);
         }
         
         pub fn autorelease(self: Self) Self {
@@ -58,10 +74,23 @@ pub fn NSObjectDerive(comptime Self: type) type {
             self.any.msg("release", .{}, void);
         }
         
+        pub fn isSubclassOfClass(other_class: AnyClass) bool {
+            return Self.class().msg("isSubclassOfClass:", .{ other_class }, bool);
+        }
+        
         pub fn as(self: Self, comptime Class: type) Class {
             comptime objc.assertClass(Class);
+            if (!self.isSubclassOfClass(Class.class()))
+                std.debug.panic("invalid cast of {s} to {s}", .{ @typeName(@TypeOf(self)), @typeName(Class) });
             return Class { .any = self.any };
-            // @compileError("safe downcast not implemented yet");
+        }
+        
+        pub fn version() NSInteger {
+            Self.class().msg("version", .{}, void);
+        }
+        
+        pub fn setVersion(value: NSInteger) void {
+            Self.class().msg("setVersion:", .{ value }, void);
         }
     };
 }
