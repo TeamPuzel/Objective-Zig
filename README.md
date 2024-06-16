@@ -11,8 +11,8 @@ It allows implementing native UI for Zig applications without having to use any 
 Everything is abstracted to standard Zig syntax with the usual Smalltalk style message chaining:
 
 ```zig
-const window_menu_item = NSMenuItem.alloc().init().autorelease();
-window_menu_item.setTitle(NSStr("File"));
+const file_menu_item = NSMenuItem.alloc().init().autorelease();
+file_menu_item.setTitle(NSStr("File"));
 ```
 
 ```zig
