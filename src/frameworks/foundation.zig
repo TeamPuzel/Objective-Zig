@@ -18,10 +18,7 @@ pub const NSObject = packed struct { pub usingnamespace NSObjectDerive(Self); co
 
 pub fn NSObjectDerive(comptime Self: type) type {
     comptime objc.assertClass(Self);
-    
     return packed struct {
-        any: AnyInstance,
-        
         pub fn super() type { return NSObject; }
         
         // Optimization:
@@ -38,9 +35,9 @@ pub fn NSObjectDerive(comptime Self: type) type {
             return AnyClass.named(cpy[0..]);
         }
         
-        pub fn new() Self {
-            return Self.alloc().init();
-        }
+        // pub fn new() Self {
+        //     return Self.alloc().init();
+        // }
         
         pub fn alloc() Self {
             return class().msg("alloc", .{}, Self);
@@ -85,13 +82,13 @@ pub fn NSObjectDerive(comptime Self: type) type {
             return Class { .any = self.any };
         }
         
-        pub fn version() NSInteger {
-            Self.class().msg("version", .{}, void);
-        }
+        // pub fn version() NSInteger {
+        //     Self.class().msg("version", .{}, void);
+        // }
         
-        pub fn setVersion(value: NSInteger) void {
-            Self.class().msg("setVersion:", .{ value }, void);
-        }
+        // pub fn setVersion(value: NSInteger) void {
+        //     Self.class().msg("setVersion:", .{ value }, void);
+        // }
     };
 }
 
@@ -117,3 +114,26 @@ pub const NSNotification = packed struct { pub usingnamespace NSObjectDerive(Sel
         return self.any.msg("object", .{}, AnyInstance);
     }
 };
+
+pub const NSError = packed struct { pub usingnamespace NSObjectDerive(Self); const Self = @This();
+    any: AnyInstance
+};
+
+pub fn NSArray(comptime T: type) type {
+    return packed struct { pub usingnamespace NSArrayDerive(Self, T); const Self = @This();
+        any: AnyInstance
+    };
+}
+
+pub fn NSArrayDerive(comptime Self: type, comptime T: type) type {
+    comptime objc.assertClass(T);
+    return packed struct { pub usingnamespace NSObjectDerive(Self);
+        
+    };
+}
+
+pub fn NSMutableArray(comptime T: type) type {
+    return packed struct { pub usingnamespace NSArrayDerive(Self, T); const Self = @This();
+        any: AnyInstance
+    };
+}

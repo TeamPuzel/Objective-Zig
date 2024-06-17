@@ -11,8 +11,9 @@ const NSString = foundation.NSString;
 const NSStr = foundation.NSStr;
 const NSApplication = cocoa.NSApplication;
 const NSWindow = cocoa.NSWindow;
+const NSAlert = cocoa.NSAlert;
 
-pub fn main() void {
+pub fn main() noreturn {
     registerClasses();
     
     const autoreleasepool = AutoReleasePool.push();
@@ -36,6 +37,16 @@ const SampleApplicationDelegate = packed struct { usingnamespace objc.foundation
         window.setMinSize(.{ .w = 400, .h = 500 });
         window.setTitle(NSStr("Sample Application"));
         window.center();
+        
+        // const alert = NSAlert.alloc().init();
+        // alert.runModal();
+        
+        // NSAlert *alert = [[NSAlert alloc] init];
+        // [alert setMessageText:@"Message text."];
+        // [alert setInformativeText:@"Informative text."];
+        // [alert addButtonWithTitle:@"Cancel"];
+        // [alert addButtonWithTitle:@"Ok"];
+        // [alert runModal];
         
         NSApplication.sharedApplication().activateIgnoringOtherApps(true);
         window.makeKeyAndOrderFront(self.any);
