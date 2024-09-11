@@ -21,32 +21,32 @@ pub const AnyClass = packed struct {
     pub inline fn msg(self: *const AnyClass, sel: [:0]const u8, args: anytype, comptime Return: type) Return {
         const ArgsType = @TypeOf(args);
         const args_info = @typeInfo(ArgsType);
-        if (args_info != .Struct) { @compileError("expected tuple or struct argument, found " ++ @typeName(ArgsType)); }
+        if (args_info != .@"struct") { @compileError("expected tuple or struct argument, found " ++ @typeName(ArgsType)); }
         
         const sel_uid = c.sel_getUid(sel.ptr) orelse unreachable;
         
         const Fn = std.builtin.Type.Fn;
         
         const params: []std.builtin.Type.Fn.Param = params: {
-            comptime var acc: [args_info.Struct.fields.len + 2]Fn.Param = undefined;
-    
+            comptime var acc: [args_info.@"struct".fields.len + 2]Fn.Param = undefined;
+            
             // First argument is always the target and selector.
             acc[0] = .{ .type = c.Class, .is_generic = false, .is_noalias = false };
             acc[1] = .{ .type = c.SEL, .is_generic = false, .is_noalias = false };
-    
+            
             // Remaining arguments depend on the args given, in the order given
-            inline for (args_info.Struct.fields, 0..) |field, i| {
+            inline for (args_info.@"struct".fields, 0..) |field, i| {
                 acc[i + 2] = .{
                     .type = field.type,
                     .is_generic = false,
                     .is_noalias = false,
                 };
             }
-    
+            
             break :params &acc;
         };
         
-        const FnInfo = std.builtin.Type { .Fn = .{
+        const FnInfo = std.builtin.Type { .@"fn" = .{
             .calling_convention = .C,
             .is_generic = false,
             .is_var_args = false,
@@ -72,7 +72,7 @@ pub const AnyClass = packed struct {
     
     pub inline fn method(self: AnyClass, name: [:0]const u8, encoding: [:0]const u8, body: anytype) bool {
         const Fn = @TypeOf(body);
-        const fn_info = @typeInfo(Fn).Fn;
+        const fn_info = @typeInfo(Fn).@"fn";
         if (fn_info.calling_convention != .C) @compileError("invalid calling convention");
         if (fn_info.is_var_args != false) @compileError("methods may not be variadic");
         if (fn_info.params.len < 2) @compileError("invalid signature");
@@ -127,21 +127,21 @@ pub const AnyInstance = packed struct {
     pub inline fn msg(self: AnyInstance, sel: [:0]const u8, args: anytype, comptime Return: type) Return {
         const ArgsType = @TypeOf(args);
         const args_info = @typeInfo(ArgsType);
-        if (args_info != .Struct) { @compileError("expected tuple or struct argument, found " ++ @typeName(ArgsType)); }
+        if (args_info != .@"struct") { @compileError("expected tuple or struct argument, found " ++ @typeName(ArgsType)); }
         
         const sel_uid = c.sel_getUid(sel.ptr) orelse unreachable;
         
         const Fn = std.builtin.Type.Fn;
         
         const params: []std.builtin.Type.Fn.Param = params: {
-            comptime var acc: [args_info.Struct.fields.len + 2]Fn.Param = undefined;
+            comptime var acc: [args_info.@"struct".fields.len + 2]Fn.Param = undefined;
             
             // First argument is always the target and selector.
             acc[0] = .{ .type = c.id, .is_generic = false, .is_noalias = false };
             acc[1] = .{ .type = c.SEL, .is_generic = false, .is_noalias = false };
             
             // Remaining arguments depend on the args given, in the order given
-            inline for (args_info.Struct.fields, 0..) |field, i| {
+            inline for (args_info.@"struct".fields, 0..) |field, i| {
                 acc[i + 2] = .{
                     .type = field.type,
                     .is_generic = false,
@@ -152,7 +152,7 @@ pub const AnyInstance = packed struct {
             break :params &acc;
         };
         
-        const FnInfo = std.builtin.Type { .Fn = .{
+        const FnInfo = std.builtin.Type { .@"fn" = .{
             .calling_convention = .C,
             .is_generic = false,
             .is_var_args = false,
@@ -214,13 +214,13 @@ pub fn Block(comptime Args: type, comptime Return: type) type {
             const Fn = std.builtin.Type.Fn;
             
             const params: []Fn.Param = params: {
-                comptime var acc: [args_info.Struct.fields.len + 1]Fn.Param = undefined;
+                comptime var acc: [args_info.@"struct".fields.len + 1]Fn.Param = undefined;
                 
                 // First argument is always the target and selector.
                 acc[0] = .{ .type = AnyInstance, .is_generic = false, .is_noalias = false };
                 
                 // Remaining arguments depend on the args given, in the order given
-                inline for (args_info.Struct.fields, 0..) |field, i| {
+                inline for (args_info.@"struct".fields, 0..) |field, i| {
                     acc[i + 1] = .{
                         .type = field.type,
                         .is_generic = false,
@@ -231,7 +231,7 @@ pub fn Block(comptime Args: type, comptime Return: type) type {
                 break :params &acc;
             };
             
-            const FnInfo = std.builtin.Type { .Fn = .{
+            const FnInfo = std.builtin.Type { .@"fn" = .{
                 .calling_convention = .C,
                 .is_generic = false,
                 .is_var_args = false,
@@ -280,7 +280,7 @@ pub fn autoRegisterClass(comptime Class: type) void {
     // defer class.register();
     
     // // TODO: Proper signature encoding function
-    // inline for (info.Struct.decls) |decl| {
+    // inline for (info.@"struct".decls) |decl| {
     //     class.method(decl.name, "", @decl(???))
     // }
 }
@@ -288,19 +288,19 @@ pub fn autoRegisterClass(comptime Class: type) void {
 /// Assert that a type is a valid representation of a class.
 pub fn assertClass(comptime Class: type) void {
     const info = @typeInfo(Class);
-    if (info != .Struct)                                     @compileError("classes must be structs");
-    if (info.Struct.layout != .@"packed")                    @compileError("classes must be packed");
-    if (info.Struct.fields.len != 1)                         @compileError("classes must have exactly one field");
-    if (!std.mem.eql(u8, info.Struct.fields[0].name, "any")) @compileError("the inner name must be \"any\"");
-    if (info.Struct.fields[0].type != AnyInstance)           @compileError("the inner type must be \"AnyInstance\"");
+    if (info != .@"struct")                                     @compileError("classes must be structs");
+    if (info.@"struct".layout != .@"packed")                    @compileError("classes must be packed");
+    if (info.@"struct".fields.len != 1)                         @compileError("classes must have exactly one field");
+    if (!std.mem.eql(u8, info.@"struct".fields[0].name, "any")) @compileError("the inner name must be \"any\"");
+    if (info.@"struct".fields[0].type != AnyInstance)           @compileError("the inner type must be \"AnyInstance\"");
 }
 
 pub fn isClass(comptime Class: type) bool {
     const info = @typeInfo(Class);
-    if (info != .Struct)                                     return false;
-    if (info.Struct.layout != .@"packed")                    return false;
-    if (info.Struct.fields.len != 1)                         return false;
-    if (!std.mem.eql(u8, info.Struct.fields[0].name, "any")) return false;
-    if (info.Struct.fields[0].type != AnyInstance)           return false;
+    if (info != .@"struct")                                     return false;
+    if (info.@"struct".layout != .@"packed")                    return false;
+    if (info.@"struct".fields.len != 1)                         return false;
+    if (!std.mem.eql(u8, info.@"struct".fields[0].name, "any")) return false;
+    if (info.@"struct".fields[0].type != AnyInstance)           return false;
     return true;
 }
